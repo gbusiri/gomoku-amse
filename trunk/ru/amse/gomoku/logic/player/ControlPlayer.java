@@ -11,7 +11,7 @@ import java.util.LinkedList;
  * Time: 14:04:10
  * To change this template use File | Settings | File Templates.
  */
-public class ControlPlayer/* extends Player*/{    /*
+public class ControlPlayer extends Player{
 
     public static final int MY_MAX = 50000;
     private final int MY_MAX_LEVEL = 3;
@@ -20,6 +20,7 @@ public class ControlPlayer/* extends Player*/{    /*
     private Border border;
     private boolean notEmpty = false;
     private int myPossibilities;
+    private int[] myTurn;
 
     private int countEs = 0;
 
@@ -33,11 +34,11 @@ public class ControlPlayer/* extends Player*/{    /*
                            , Board.MY_BOARD_SIZE / 2 + Board.MY_WINNING_SIZE);
     }
 
-    public int[] makeNextTurn(int[][] board, int[] coordinates) {
+    public void makeNextTurn(int[][] board, int[] coordinates) {
         myBoard = board;
         countEs = 0;
         if (checkIfEmpty()) {
-            return new int[]{Board.MY_BOARD_SIZE / 2, Board.MY_BOARD_SIZE / 2};
+            myTurn = new int[]{Board.MY_BOARD_SIZE / 2, Board.MY_BOARD_SIZE / 2};
         }
         myPossibilities = getPossibleTurns().size();
         ControlElement myHead = new ControlElement(myPossibilities);
@@ -48,8 +49,11 @@ public class ControlPlayer/* extends Player*/{    /*
                         , needed[1] - Board.MY_WINNING_SIZE
                         , needed[1] + Board.MY_WINNING_SIZE);
         System.out.println(" mfhnmgmg,kbcmf, = " + countEs);
+        myTurn = needed;
+    }
 
-        return needed;
+    public int[] giveNextTurn() {
+        return myTurn;
     }
 
     private int[] findTurn(ControlElement element) {
@@ -287,6 +291,4 @@ public class ControlPlayer/* extends Player*/{    /*
                                     , int width2) {
             return colour == myBoard[height2][width2];
         }
-*/
-    public static final int MY_MAX = 10;
 }

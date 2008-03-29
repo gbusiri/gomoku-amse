@@ -10,11 +10,7 @@ import java.awt.geom.*;
 import java.util.LinkedList;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Tushka
- * Date: 25.02.2008
- * Time: 0:21:32
- * To change this template use File | Settings | File Templates.
+ * 
  */
 public class BoardView extends JPanel {
 
@@ -48,19 +44,19 @@ public class BoardView extends JPanel {
 
             public void mousePressed(MouseEvent event) {
                 if (!myFlagSet) {
+
                     double myX = event.getX();
                     double myY = event.getY();
-
                     int width = (int) (myX / myDibSide);
                     int height = (int) (myY / myDibSide);
 
                     if ((!isContained(myX, myY))
-                       && ((!myFirst.isComputer()
-                          || !mySecond.isComputer()))) {
+                       && (!myFirst.isComputer()
+                          || !mySecond.isComputer())) {
                         setTurnAccepted(height, width);
                         turnIsReady = true;
+                        myFlagSet = true;
                     }
-                    myFlagSet = true;
                 }
             }
         });
@@ -85,7 +81,6 @@ public class BoardView extends JPanel {
     }
 
     public void addDib(int height, int width) {
-        myFlagSet = false;
         double leftX = width * myDibSide;
         double leftY = height * myDibSide;
 

@@ -33,8 +33,10 @@ public class Controller extends Thread{
     }
 
     public void run() {
-        
+
         myCoordinates = new int[0];
+        boolean check;
+
         while (!myFrame.isStarted()) {
             try {
                 Thread.sleep(300);
@@ -45,6 +47,7 @@ public class Controller extends Thread{
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {}
+
             myCurrentPlayer = nextPlayer();
             if (!myCurrentPlayer.isComputer()) {
                 myBoardView.setFlag(false);
@@ -52,7 +55,8 @@ public class Controller extends Thread{
             makeTurn();            
             myBoardView.addDib(myCoordinates[0], myCoordinates[1]);
         }
-        myFrame.setGameFinished(true, myCurrentPlayer);
+        check = myBoard.isWin();
+        myFrame.setGameFinished(check, myCurrentPlayer);
     }
 
     private synchronized void makeTurn() {

@@ -26,11 +26,8 @@ public class MyFrame extends JFrame {
         Dimension screenSize = kit.getScreenSize();
         myActualWidth = screenSize.height / 2;
         myActualHeight = myActualWidth * 9 / 8;
-
     }
 
-    private IPlayer myFirst = new AIPlayer("  first assigned", 1);
-    private IPlayer mySecond = new AIPlayer(" second assigned", 2);
     private Controller myGame = null;
     private final Board myBoard = new Board();
     private final BoardView myBoardView = new BoardView();
@@ -73,13 +70,14 @@ public class MyFrame extends JFrame {
                     myBoardView.refresh();
                     startNewGame();
                 } else if (ALLOW_STOP) {
-                  /*  myGame.stop();     */
+                  /*  myGame.stop();*/
                     startNewGame();
                 }
             }
 
             private void startNewGame() {
                 createSelectPlayerView(myBoardView);
+                myGameFinished = false;
                 myGame = new Controller(myBoardView
                                        , myBoard
                                        , frame);
@@ -96,8 +94,6 @@ public class MyFrame extends JFrame {
     }
 
     public void setPlayers(IPlayer first, IPlayer second) {
-        myFirst = first;
-        mySecond = second;
         myGame.setPlayers(first, second);
         myBoardView.setPlayers(first, second);
         mySelectView.dispose();//????????????????????
@@ -118,14 +114,24 @@ public class MyFrame extends JFrame {
         mySelectView.setVisible(true);
     }
 
-    public void setGameFinished(boolean gameFinished, IPlayer winner) {
-        myGameFinished = gameFinished;
+    public void setGameFinished(boolean howGameFinished, IPlayer winner) {
+        myGameFinished = true;
         myGameStarted = false;
 
-        JFrame fr = new JFrame("There is a winner!");
+        JFrame fr = new JFrame();
+
+        String message;
+        if (howGameFinished) {
+            fr.setTitle("There is a winner!");
+            message = "!!" + winner.getName() + "!!";
+        } else {
+            fr.setTitle("It is a Draw!");
+            message = "Congaratulations to both of You";
+        }
+
         fr.setSize(250, 80);
         fr.setLocation(myActualWidth / 2 + 200, myActualWidth / 2 + 100);
-        fr.add(new JTextField("!!" + winner.getName() + "!!"));
+        fr.add(new JTextField(message));
         fr.setVisible(true);
     }
 }

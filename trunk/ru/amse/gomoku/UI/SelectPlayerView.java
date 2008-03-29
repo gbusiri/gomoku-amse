@@ -4,6 +4,7 @@ import ru.amse.gomoku.logic.player.IPlayer;
 import ru.amse.gomoku.logic.player.PersonPlayer;
 import ru.amse.gomoku.logic.player.AIPlayer;
 import ru.amse.gomoku.logic.aiPlayer.MyAIPlayer;
+import ru.amse.gomoku.logic.cleverPlayer.CleverPlayer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,11 +12,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Tushka
- * Date: 23.03.2008
- * Time: 19:57:51
- * To change this template use File | Settings | File Templates.
+ *
  */
 public class SelectPlayerView extends JPanel {
 
@@ -44,7 +41,7 @@ public class SelectPlayerView extends JPanel {
     private JPanel createDialogBox() {
         JPanel choice = new JPanel(new BorderLayout());
         JPanel pane = new JPanel(new GridLayout(1, 2, 20, 20));
-        JButton startButton = null;
+        JButton startButton;
 
         final ButtonGroup group1 = createGroup(pane);
         final ButtonGroup group2 = createGroup(pane);
@@ -70,7 +67,7 @@ public class SelectPlayerView extends JPanel {
                 } else if (command == myPlayers[1]) {
                     player = new AIPlayer("Intellect", colour);
                 } else if (command == myPlayers[2]) {
-                    player = new MyAIPlayer("Clever", colour);
+                    player = new CleverPlayer("Clever", colour);
                 }
                 return player;
             }

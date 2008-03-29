@@ -4,11 +4,9 @@ import ru.amse.gomoku.logic.board.Board;
 import java.text.MessageFormat;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Tushka
- * Date: 13.03.2008
- * Time: 13:42:45
- * To change this template use File | Settings | File Templates.
+ * the main part for searching one of the best moves.
+ * using this class does not guarantee that move is perfect,
+ * it is just not bad and sometimes even very good.
  */
 class Looker {
 
@@ -18,11 +16,20 @@ class Looker {
     final int MY_MAX_LEVEL;
     final Border myBorder;
     final Estimator myEstimator;
-    final ElementAdder myAdder;
+    final Possibilities myPossibleTurns;
 
+    /**
+     * it is a mark for searching algorithm.
+     * it becomes true as soon as we reached the max level.
+     */
     boolean myEndReached = false;
+
     int[][] myBoard;
     private int myPossibilities;
+
+    //to be deleted................
+    private boolean printingNeeded = true;
+    private boolean checkDone = true;
 
     Looker(int colour1, int colour2) {
         if (Board.MY_BOARD_SIZE > 20) {
@@ -31,48 +38,43 @@ class Looker {
             MY_MAX_LEVEL = 3;
         }
         myBorder = new Border(Board.MY_WINNING_SIZE - 2, Board.MY_BOARD_SIZE);
-        myAdder = new ElementAdder(myBorder);
-        myEstimator = new Estimator(myBoard);
+        myPossibleTurns = new Possibilities(myBorder);
+        myEstimator = new Estimator();
         myColour = colour1;
         myOpponentsColour = colour2;
     }
 
     int[] look(int[][] board, int[] coordinates) {
         myBoard = board;
-        myBorder.addCoordinates(coordinates);
-        myPossibilities = myBorder.myPossibilities;
-        LookElement head = new LookElement(myPossibilities);
-        Possibilities possible = new Possibilities(board);
 
-        int[] coor;
-        int estimated;
-
-        for (int i = 0; i < myPossibilities; i++) {
-            coor = possible.getNextPossibility();
-            estimated = myEstimator.estimate(coor[0], coor[1], myColour, board);
-            if (estimated >= MY_MAX) {
-                return coor;
-            }
-            head.addChild(new LookElement(coor[0]
-                                         , coor[1]
-                                         , myPossibilities - 1
-                                         , estimated));
+        if (coordinates.length == 2) {
+            myBorder.addCoordinates(coordinates);
         }
-        head.sortChildren(0);
+        myPossibilities = myBorder.myPossibilities;
+
+        LookElement head = new LookElement(myPossibilities);
         int[] turn = lookForTurn(head);
+
+        //to be deleted................
+        if (printingNeeded) {
+             System.out.println("    printing children after the modifications....");
+            head.printChildren();
+        }
+
+        myEndReached = false;
+        head.disposeChildren();
+
+        //to be deleted................
+        checkDone = false;
+
         myBorder.addCoordinates(turn);
         return turn;
     }
 
     int[] lookForTurn(LookElement head) {
-        for (LookElement look : head.myChildren) {
-            myBorder.setCoordinates(look.myHeightOfAdded, look.myWidthOfAdded, 0);
-            search(look, 1);
-            minMaxing(look, 1);
-        }
-        head.sortChildren(0);
-        return new int[] {head.myChildren.get(0).myHeightOfAdded
-                         , head.myChildren.get(0).myWidthOfAdded};
+        search(head, 0);
+
+        return  head.getOneOfHighest();
     }
 
     private void search(LookElement element, int level) {
@@ -81,6 +83,8 @@ class Looker {
                 myEndReached = true;
             }
             firstSearch(element, level);
+
+            //myBorder.reseting(level + 1);
         } else if (myPossibilities > level) {
             secondSearch(element, level);
         }
@@ -90,22 +94,42 @@ class Looker {
         int total = myPossibilities - level;
         int nextLevel = level + 1;
 
+        myPossibleTurns.resetCoordinates();
         for (int i = 0; i < total; i++) {
-             addChild(element, level);
+            if (level == 0) {
+                LookElement currentChild = addChild(element, level);
+                if (currentChild.myFirstQuantity > (MY_MAX / 9 * 10)) {
+                    currentChild.setQuantity(currentChild.myFirstQuantity);
+                    return;
+                }
+            } else {
+                addChild(element, level);
+            }
         }
+        //to be deleted................
+        if (printingNeeded && (level == 0)) {
+            System.out.println("    printing children before....");
+                element.printChildren();
+        }
+
         element.sortChildren(level % 2);
 
         for (LookElement look : element.myChildren) {
-            fillBoard(look.myHeightOfAdded, look.myWidthOfAdded, level);
-            myBorder.setCoordinates(look.myHeightOfAdded, look.myWidthOfAdded, level);
-            search(look, nextLevel);
-            minMaxing(look, nextLevel);
-            unfillBoard(look.myHeightOfAdded, look.myWidthOfAdded);
+            if ((level == 0) && (look.myFirstQuantity == 0)) {    //????????????????????????????????????
+            } else {
+                fillBoard(look.myHeightOfAdded, look.myWidthOfAdded, level);
+                myBorder.setCoordinates(look.myHeightOfAdded, look.myWidthOfAdded, level);
+                search(look, nextLevel);
+                minMaxing(look, nextLevel);
+
+                unfillBoard(look.myHeightOfAdded, look.myWidthOfAdded);
+            }
         }
     }
 
     private void secondSearch(LookElement element, int level) {
-         if (level < MY_MAX_LEVEL) {
+        if (level < MY_MAX_LEVEL) {
+            //to be deleted................
             int count = 0;
 
             while (element.getStatus() != 2) {
@@ -127,28 +151,40 @@ class Looker {
                 if (checkIfNotNeededToContinue(element, level)) {
                     element.setStatus(2);
                 }
+                //to be deleted................
                 count++;
                 unfillBoard(currentChild.myHeightOfAdded
                            , currentChild.myWidthOfAdded);
             }
-            /*
-            System.out.println("   count = " + count + "  level = " + level);
-              */
+
+            //to be deleted................
+            if (printingNeeded) {
+                System.out.println("   count = " + count + "  level = " + level);
+            }
         } else {
             element.setQuantity(element.myFirstQuantity);
         }
         minMaxing(element, level);
     }
 
+    /**
+     * alpha - beta procedure.
+     * compares quantity of child with its parent's.
+     *
+     * @param element - child
+     * @param level - determines whoes turn it is now
+     * @return true if currentChild is not perspective to explore
+     *         , false otherwise.
+     */
     private boolean checkIfNotNeededToContinue(LookElement element, int level) {
         if (element.myParent.myProbableSet) {
             int checkValue = element.myParent.getQuantity();
+            
             if (((level % 2 == 0)
                 && (element.getQuantity() >= checkValue))
                || ((level % 2 == 1)
                   && (element.getQuantity() <= checkValue))) {
                 return true;
-
             }
         }
         return false;
@@ -158,12 +194,26 @@ class Looker {
         int quantity = element.getQuantity();
 
         if ((level % 2 == 0)
-           && ((!element.myParent.probableSet())
+           && ((!element.myParent.isProbableSet())
               || (quantity < element.myParent.getQuantity()))) {
+
+            //to be deleted................
+            if (printingNeeded && element.myParent.isProbableSet()) {
+                System.out.println("  elementsQuantity = " + quantity + "   parents = "
+                        + element.myParent.getQuantity() + " level =" + level);
+            }
+
             element.myParent.setQuantity(quantity);
         } else if ((level % 2 == 1)
-                  && ((!element.myParent.probableSet())
+                  && ((!element.myParent.isProbableSet())
                      || (quantity > element.myParent.getQuantity()))) {
+
+            //to be deleted................
+            if (printingNeeded && element.myParent.isProbableSet()) {
+                System.out.println("  elementsQuantity = " + quantity + "   parents = "
+                        + element.myParent.getQuantity() + " level =" + level);
+            }
+
             element.myParent.setQuantity(quantity);
         }
     }
@@ -183,8 +233,12 @@ class Looker {
         myBoard[height][width] = 0;
     }
 
-    /*
-    gets parent and its level
+    /**
+     * adds child with the first estimation to the given parent.
+     *
+     * @param element - parent.
+     * @param level - level of the parent.
+     * @return the added child.
      */
     private LookElement addChild(LookElement element, int level) {
         int height;
@@ -193,7 +247,19 @@ class Looker {
         int valueEstimated;
 
         do {
-            int[] needed = myBorder.getCoordinates(level);
+            int[] needed;
+            if (myEndReached) {
+                needed = myBorder.getCoordinates(level);
+            } else {
+
+                //to be deleted................
+                if ((level == 0) && (checkDone)) {
+                    System.out.println("   colour =" + myColour + "//////////////////////////////////");
+                    myPossibleTurns.print();
+                }
+
+                needed = myPossibleTurns.getNextPossibility();
+            }
             height = needed[0];
             width = needed[1];
         } while (!coordinateAcceptance(height, width));
@@ -205,15 +271,18 @@ class Looker {
             valueEstimated = - myEstimator.estimate(height, width, colour, myBoard);
         }
 
-        if (level > 0) {
-            System.out.print("                       ");
+        //to be deleted................
+        if (printingNeeded) {
+            if (level > 0) {
+                System.out.print("                       ");
+            }
+            if (level > 1) {
+                System.out.print("                       ");
+            }
+            System.out.println(MessageFormat.format(" height = {0}  width = {1}   estimated ={2}   colour ={3}   level ={4}"
+                                                    , height, width, valueEstimated, colour, level));
         }
-        if (level > 1) {
-            System.out.print("                       ");
-        }
-        System.out.println(MessageFormat.format(" height = {0}  width = {1}   estimated ={2}   colour ={3}   level ={4}"
-                                                , height, width, valueEstimated, colour, level));
-      
+
         LookElement child = new LookElement(height
                                        , width
                                        , myPossibilities - level - 1

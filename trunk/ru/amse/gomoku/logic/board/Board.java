@@ -1,15 +1,12 @@
 package ru.amse.gomoku.logic.board;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Tushka
- * Date: 23.02.2008
- * Time: 1:30:33
- * To change this template use File | Settings | File Templates.
+ * model of the game.
+ * it is a board where the dibs are placed and presence of a win is analized. 
  */
 public class Board implements IBoard{
 
-    public static final int MY_BOARD_SIZE = 15;
+    public static final int MY_BOARD_SIZE = 10;
     public static final int MY_WINNING_SIZE = 5;
     private final Dib[][] myBoard;
 	private int myNumberOfDibs;
@@ -23,6 +20,14 @@ public class Board implements IBoard{
         myWidthOfLastAdded = 0;
     }
 
+    /**
+     * adds dib without checking dibPresent.
+     * position should be checked by isPossibleMove() function.
+     *
+     * @param height - vertical coordinate of the dib being added.
+     * @param width - horizontal coordinate of the dib being added.
+     * @param colour - colour of the dib to add.
+     */
     public void addDib(int height, int width, int colour) {
         if ((colour ==1) || (colour == 2)) {
 			myBoard[height][width] = new Dib(colour);
@@ -103,8 +108,12 @@ public class Board implements IBoard{
                       , int heightChange
                       , int widthChange
                       , int count) {
-        if ((count < MY_WINNING_SIZE) && isDibPresent(height + heightChange, width + widthChange)
-           && (checkColours(height, width, height + heightChange, width + widthChange))) {
+        if ((count < MY_WINNING_SIZE)
+           && isDibPresent(height + heightChange, width + widthChange)
+           && (checkColours(height
+                           , width
+                           , height + heightChange
+                           , width + widthChange))) {
             return search(height + heightChange
                          , width + widthChange
                          , heightChange
