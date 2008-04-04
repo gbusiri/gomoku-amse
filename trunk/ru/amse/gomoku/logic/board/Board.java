@@ -7,7 +7,7 @@ package ru.amse.gomoku.logic.board;
 public class Board implements IBoard{
 
     public static final int MY_BOARD_SIZE = 10;
-    public static final int MY_WINNING_SIZE = 5;
+    public static final int MY_WINNING_SIZE = 3;
     private final Dib[][] myBoard;
 	private int myNumberOfDibs;
     private int myHeightOfLastAdded;
