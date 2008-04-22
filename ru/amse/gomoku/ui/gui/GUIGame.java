@@ -27,7 +27,6 @@ public class GUIGame {
         URL url = ClassLoader.getSystemResource(imageName);
         ImageIcon icon = new ImageIcon(url, "computer");
 
-
         IIntellectProvider intellectProvider = new IntellectProvider();
         try {
             intellectProvider.registerPlayer("Intellect"
@@ -39,11 +38,11 @@ public class GUIGame {
                                      , new CleverPlayer("Strange"
                                                        , MY_DEFAULT_COLOUR));
         } catch (IllegalAccessException e) {}
-        //try {
-        //    intellectProvider.registerPlayer("Interesting"
-        //                             , new AIPlayer("Interesting"
-        //                                           , MY_DEFAULT_COLOUR, icon));
-        //} catch (IllegalAccessException e) {}
+        try {
+            intellectProvider.registerPlayer("Interesting"
+                                     , new AIPlayer("Interesting"
+                                                   , MY_DEFAULT_COLOUR, icon));
+        } catch (IllegalAccessException e) {}
 
         GomokuFrame gameFrame = new GomokuFrame(intellectProvider);
         gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
