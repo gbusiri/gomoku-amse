@@ -38,12 +38,13 @@ public class StatusView extends JPanel implements IListener {
         setLayout(new GridLayout(2, 1, 5, 5));
         setBackground(new Color(240, 250, 240));
         setBorder(BorderFactory.createCompoundBorder(
-                 BorderFactory.createTitledBorder("Status of the current game")
-                 , BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+                 BorderFactory.createTitledBorder("Status")
+                 , BorderFactory.createEmptyBorder(6, 10, 5, 10)));
 
         myTurnStatus = new JLabel();
         myTurnStatus.setHorizontalTextPosition(JLabel.CENTER);
         myTurnStatus.setFont(new Font(null, Font.TRUETYPE_FONT, 12));
+        
         myGeneralStatus = new JLabel("Total games played = 0");
         myGeneralStatus.setFont(new Font(null, Font.TRUETYPE_FONT, 12));
         myGeneralStatus.setHorizontalTextPosition(JLabel.CENTER);
@@ -75,7 +76,7 @@ public class StatusView extends JPanel implements IListener {
         }
     }
 
-    public void setGameFinished(boolean isWin,IPlayer winner) {
+    public void setGameFinished(boolean isWin, IPlayer winner) {
         String message;
 
         totalPlayedGames++;

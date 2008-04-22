@@ -32,7 +32,8 @@ public class SelectPlayerView extends JDialog {
     public SelectPlayerView(GomokuFrame frame
                            , IIntellectProvider intellectProvider
                            , IImageProvider imageProvider) {
-        super(frame, "Select The Players");
+        super(frame, "Select The Players", true);
+
         myFrame = frame;
         myImageProvider = imageProvider;
         myIntellectProvider = intellectProvider;
@@ -42,11 +43,11 @@ public class SelectPlayerView extends JDialog {
         setLocation((int)(x.getX() + 80),(int)(x.getY() + 100));
         setSize(200, 200);
         setResizable(false);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setVisible(true);
     }
 
     private void addWidgets() {
-        final JDialog current = this;
         JPanel main = new JPanel(new BorderLayout());
 
         JPanel players = new JPanel(new GridLayout(2, 2, 10, 10));
@@ -126,7 +127,8 @@ public class SelectPlayerView extends JDialog {
         JButton cancel = new JButton("Cancel");
         cancel.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                current.dispose();
+                myFrame.setInterrupted(false);
+                SelectPlayerView.this.dispose();
             }
         });
 
@@ -134,30 +136,42 @@ public class SelectPlayerView extends JDialog {
         ok.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 IPlayer player;
-               if (box.getSelectedIndex() == 0) {
-                   player = createPerson();
-               } else {
-                   player = myIntellectProvider.getPlayer(names[box.getSelectedIndex()]);
-               }
-               player.setName(names[box.getSelectedIndex()]);
-               player.setColour(IBoard.DIB_COLOUR_FIRST);
-               myFirstPlayer = player;
+                if (box.getSelectedIndex() == 0) {
+                    player = createPerson();
+                } else {
+                    player = myIntellectProvider.getPlayer(names[box.getSelectedIndex()]);
+                    if (player == null) {
+                        JOptionPane.showMessageDialog(myFrame, "couldn load the player"
+                                                     + names[box.getSelectedIndex()]);
+                        return;
+                    }
+                }
 
-               if (box2.getSelectedIndex() == 0) {
-                   player = createPerson();
-               } else {
-                   player = myIntellectProvider.getPlayer(names[box2.getSelectedIndex()]);
-               }
-               player.setName(names[box2.getSelectedIndex()]);
-               player.setColour(IBoard.DIB_COLOUR_SECOND);
-               mySecondPlayer = player;
+                player.setName(names[box.getSelectedIndex()]);
+                player.setColour(IBoard.DIB_COLOUR_FIRST);
+                myFirstPlayer = player;
 
-               if (myFirstPlayer.getName().equals(mySecondPlayer.getName())) {
-                   myFirstPlayer.setName(myFirstPlayer.getName() + " - first ");
-                   mySecondPlayer.setName(mySecondPlayer.getName() + " - second ");
-               }
+                if (box2.getSelectedIndex() == 0) {
+                    player = createPerson();
+                } else {
+                    player = myIntellectProvider.getPlayer(names[box2.getSelectedIndex()]);
+                    if (player == null) {
+                        JOptionPane.showMessageDialog(myFrame, "couldn load the player"
+                                                     + names[box2.getSelectedIndex()]);
+                        return;
+                    }
+                }
 
-               myFrame.setPlayers(myFirstPlayer, mySecondPlayer);
+                player.setName(names[box2.getSelectedIndex()]);
+                player.setColour(IBoard.DIB_COLOUR_SECOND);
+                mySecondPlayer = player;
+
+                if (myFirstPlayer.getName().equals(mySecondPlayer.getName())) {
+                    myFirstPlayer.setName(myFirstPlayer.getName() + " - first ");
+                    mySecondPlayer.setName(mySecondPlayer.getName() + " - second ");
+                }
+                myFrame.setPlayers(myFirstPlayer, mySecondPlayer);
+                SelectPlayerView.this.dispose();
             }
         });
         buttonPanel.add(ok);
@@ -182,6 +196,6 @@ public class SelectPlayerView extends JDialog {
         locate.setIcon(myPlayerImages[START_INDEX]);
         locate.setHorizontalAlignment(JLabel.CENTER);
 	    locate.setVerticalAlignment(JLabel.CENTER);
-	    //locate.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+	    locate.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
     }
 }

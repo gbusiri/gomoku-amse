@@ -28,8 +28,10 @@ public class ImageProvider implements IImageProvider {
 
         String imageName = "ru/amse/gomoku/images/notAperson.png";
         myPlayerImages[1] = new ImageIcon(ClassLoader.getSystemResource(imageName));
+
         imageName = "ru/amse/gomoku/images/intellect.png";
         myPlayerImages[2] = new ImageIcon(ClassLoader.getSystemResource(imageName));
+        
         imageName = "ru/amse/gomoku/images/intellect1.png";
         myPlayerImages[3] = new ImageIcon(ClassLoader.getSystemResource(imageName));
     }
@@ -52,12 +54,25 @@ public class ImageProvider implements IImageProvider {
         myActionIcons[3] = new ImageIcon(ClassLoader
                                         .getSystemResource("ru/amse/gomoku/images/pause.png")
                                         , "Pause");
-         myActionIcons[4] = new ImageIcon(ClassLoader
+        myActionIcons[4] = new ImageIcon(ClassLoader
                                         .getSystemResource("ru/amse/gomoku/images/draw.jpg")
                                         , "Draw");
-         myActionIcons[5] = new ImageIcon(ClassLoader
+        myActionIcons[5] = new ImageIcon(ClassLoader
                                         .getSystemResource("ru/amse/gomoku/images/ok.png")
                                         , "Win");
+        myActionIcons[6] = new ImageIcon(ClassLoader
+                                        .getSystemResource("ru/amse/gomoku/images/add.png")
+                                        , "Add");
+        myActionIcons[7] = new ImageIcon(ClassLoader
+                                        .getSystemResource("ru/amse/gomoku/images/remove.png")
+                                        , "Remove");
+        String path = "ru/amse/gomoku/images/dib";
+        String name = "Dib";
+        for (int i = 1; i < 8; i++) {
+            myActionIcons[i + 7] = new ImageIcon(ClassLoader
+                                        .getSystemResource(path + i + ".png")
+                                        , "Dib" + i);
+        }
     }
 
     public ImageIcon[] getPlayerImages() {

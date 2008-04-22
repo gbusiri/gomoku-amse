@@ -46,6 +46,9 @@ public class IntellectProvider implements IIntellectProvider {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
+        if (toGet != null) {
+            toGet.setName(toGet.getName().substring(0, IIntellectProvider.MY_MAX_NAME_SIZE) + "..");
+        }
         return toGet;
     }
 

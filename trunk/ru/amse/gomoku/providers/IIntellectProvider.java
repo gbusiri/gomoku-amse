@@ -9,6 +9,8 @@ import javax.swing.*;
  */
 public interface IIntellectProvider {
 
+    public static final int MY_MAX_NAME_SIZE = 10;
+
     public void registerPlayer(String name, IPlayer player)
                 throws IllegalAccessException;
 

@@ -16,11 +16,14 @@ public class Controller extends Thread {
     private byte[] myCoordinates;
     final GomokuFrame gomokuFrame;
 
-    private boolean interrupted = false;
+    private volatile boolean interrupted = false;
+    private volatile boolean isReadyToStart = false;
+    private final boolean isTournament;
 
-    public Controller(IBoard board, GomokuFrame frame) {
+    public Controller(IBoard board, GomokuFrame frame, boolean isTournament) {
         myBoard = board;
         gomokuFrame = frame;
+        this.isTournament = isTournament;
         start();
     }
 
@@ -30,20 +33,32 @@ public class Controller extends Thread {
         waitForStart();
         do {
             myCurrentPlayer = nextPlayer();
-            try {
-                Thread.sleep(300);
-            } catch (InterruptedException e) {}
-            waitForContinue();
-
+            //if (!isTournament) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {}
+                waitForContinue();
+            //}
+            if (gomokuFrame.isInterrupted()) {
+                return;
+            }
             makeTurn();
         } while ((!myBoard.isWin()) && (myBoard.isPossibleTurnPresent()));
-        gomokuFrame.setGameFinished(myBoard.isPossibleTurnPresent()
-                                   , myCurrentPlayer);
+        if (!isTournament) {
+            gomokuFrame.setGameFinished(myBoard.isPossibleTurnPresent()
+                                       , myCurrentPlayer);
+        } else {
+            gomokuFrame.setResult(myBoard.isPossibleTurnPresent()
+                                 , myFirstPlayer
+                                 ,  mySecondPlayer
+                                 , myCurrentPlayer);
+        }
     }
 
     public void setPlayers(IPlayer first, IPlayer second) {
         myFirstPlayer = first;
         mySecondPlayer = second;
+        isReadyToStart = true;
     }
 
     public IPlayer getCurrentPlayer() {
@@ -59,7 +74,7 @@ public class Controller extends Thread {
     }
 
     private synchronized void waitForStart() {
-        while (!gomokuFrame.isStarted()) {
+        while (!isReadyToStart) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {}
@@ -67,7 +82,7 @@ public class Controller extends Thread {
     }
 
     private synchronized void waitForContinue() {
-        while (gomokuFrame.isGamePaused()) {
+        while (gomokuFrame.isGamePaused() && !gomokuFrame.isInterrupted()) {
             if (gomokuFrame.isUndoNeeded()) {
                 undoTurn();
             }
@@ -82,16 +97,17 @@ public class Controller extends Thread {
 
         myCurrentPlayer.makeNextTurn(myBoard.getCurrentBoard()
                                     , lastCoordinates);
-        if (gomokuFrame.isGamePaused()) {
+        if ((gomokuFrame.isGamePaused()) || gomokuFrame.isInterrupted()) {
             interrupted = true;
             return;                
         }
         myCoordinates = myCurrentPlayer.giveNextTurn();
-
         if (!myBoard.addDib(myCoordinates[0]
                       , myCoordinates[1]
                       , myCurrentPlayer.getColour())) {
-            gomokuFrame.toMakeTurnIsImpossible(myCoordinates);
+            if (!isTournament) {
+                gomokuFrame.toMakeTurnIsImpossible(myCoordinates);
+            }
         }
     }
 
@@ -115,6 +131,9 @@ public class Controller extends Thread {
             }
             interrupted = false;
             myBoard.undoLastTurn();
+        }
+        if (!myBoard.isUndoPossible()) {
+            gomokuFrame.undo(false);            
         }
     }
 }

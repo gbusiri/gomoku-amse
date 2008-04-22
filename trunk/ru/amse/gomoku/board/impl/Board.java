@@ -3,7 +3,6 @@ package ru.amse.gomoku.board.impl;
 import ru.amse.gomoku.board.IBoard;
 import ru.amse.gomoku.board.IListener;
 
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Stack;
 
@@ -118,10 +117,18 @@ public class Board implements IBoard {
             fireEvent(IBoard.UNDO_PERFORMED, null);
             return true;
         }
-        throw new RuntimeException("impossible to undo");
+        return false;
     }
 
     public boolean isUndoPossible() {
+        /*
+        for (int i = 0; i < IBoard.MY_BOARD_SIZE; i++) {
+            for (int j = 0; j < IBoard.MY_BOARD_SIZE; j++) {
+                System.out.print(myBoard[i][j]);
+            }
+            System.out.println();
+        }
+        System.out.println(myNumberOfDibs); */
         return myNumberOfDibs > 0;
     }
 

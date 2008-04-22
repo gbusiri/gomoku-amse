@@ -2,12 +2,15 @@ package ru.amse.gomoku.ui.gui;
 
 import ru.amse.gomoku.board.IBoard;
 import ru.amse.gomoku.board.IListener;
+import ru.amse.gomoku.providers.IImageProvider;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 import java.util.LinkedList;
 
 /**
@@ -18,6 +21,10 @@ public class BoardView extends JPanel implements IListener {
     public static final Color DEFAULT_COLOR = new Color(204, 204, 204);
 
     private LinkedList<Ellipse2D> myDibs = new LinkedList<Ellipse2D>();
+    private JLabel[][] myZone;
+    private ImageIcon myDibFirst;
+    private ImageIcon myDibSecond;
+
     private boolean isTurnAllowed = false;
     
     private byte[] nextTurnAccepted = new byte[2];
@@ -26,16 +33,29 @@ public class BoardView extends JPanel implements IListener {
     private double myBoardSize;
     private double myDibSide;
 
-    public BoardView() {
+    public BoardView(IImageProvider images) {
 
+        myDibFirst = images.getActionIcon("Dib6");
+        myDibSecond = images.getActionIcon("Dib1");
         setBackground(DEFAULT_COLOR);
         setSize(GomokuFrame.myActualWidth * 9 / 10
                , GomokuFrame.myActualHeight * 9 / 10);
+        setLayout(new GridLayout(IBoard.MY_BOARD_SIZE, IBoard.MY_BOARD_SIZE));
+
         addListener();
+        addLabels();
     }
 
-    public void setDibSide(double side) {
-        myDibSide = side;
+    private void addLabels() {
+        myZone = new JLabel[IBoard.MY_BOARD_SIZE][IBoard.MY_BOARD_SIZE];
+        for (JLabel[] labels : myZone) {
+            for (int i = 0; i < IBoard.MY_BOARD_SIZE; i++) {
+                labels[i] = new JLabel();
+                labels[i].setSize((int)myDibSide, (int)myDibSide);
+                labels[i].setAlignmentX(JLabel.WEST);
+                this.add(labels[i]);
+            }
+        }
     }
 
     private void addListener() {
@@ -68,9 +88,13 @@ public class BoardView extends JPanel implements IListener {
 
     private void undoTurn() {
         if ((myDibs != null) && (myDibs.size() > 0)) {
-            myDibs.removeLast();
-        }
-        repaint();
+            Ellipse2D el = myDibs.removeLast();
+
+            int x = (int)(el.getBounds2D().getMinX() / myDibSide);
+            int y = (int)(el.getBounds2D().getMinY() / myDibSide);
+            myZone[y][x].setIcon(null);
+            repaint();
+        }         
     }
 
     public byte[] getTurn() {
@@ -100,6 +124,7 @@ public class BoardView extends JPanel implements IListener {
         if (myDibs != null) {
             for (Ellipse2D ell : myDibs) {
                 Rectangle2D rec = ell.getFrame();
+
                 if (rec.contains(width, height)) {
                     return true;
                 }
@@ -112,40 +137,51 @@ public class BoardView extends JPanel implements IListener {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
-        boolean checkColor = false;
-        if (myDibs != null) {
-            for (Ellipse2D rec : myDibs) {
-                if (checkColor) {
-                    g2.setPaint(Color.BLACK);
-                } else {
-                    g2.setPaint(Color.WHITE);
-                }
-                checkColor = !checkColor;
-                g2.fill(rec);
-            }            
-            if (myDibs.size() > 0) {
-                g2.setPaint(Color.RED);
-                Ellipse2D last = myDibs.get(myDibs.size() - 1);
-                g2.fill(new Ellipse2D.Double(last.getCenterX() - myDibSide / 4
-                        , last.getCenterY() - myDibSide / 4, myDibSide / 2
-                        , myDibSide / 2));
-            }
-        }
 
         g2.setPaint(Color.WHITE);
         double quantity = myBoardSize / myDibSide;
+
         double height = myBoardSize;
         for (int i = 0; i <= quantity; i++) {
-            g2.draw(new Line2D.Double(myDibSide * i, 0, myDibSide * i, height));            
+            g2.draw(new Line2D.Double(myDibSide * i, 0, myDibSide * i, height));
         }
         double width = myBoardSize;
         for (int i = 0; i <= quantity; i++) {
-            g2.draw(new Line2D.Double(0, myDibSide * i, width,myDibSide * i));            
+            g2.draw(new Line2D.Double(0, myDibSide * i, width,myDibSide * i));
+        }
+
+        boolean checkColor = false;
+        if (myDibs != null) {
+            for (Ellipse2D rec : myDibs) {
+                ImageIcon icon;
+                if (checkColor) {
+                    icon = myDibFirst;
+                } else {
+                    icon = myDibSecond;
+                }
+                int x = (int)(rec.getBounds2D().getMinX() / myDibSide);
+                int y = (int)(rec.getBounds2D().getMinY() / myDibSide);
+
+                if (myZone[y][x].getIcon() == null) {
+                    myZone[y][x].setIcon(icon);
+                }
+                checkColor = !checkColor;
+            }
+            if (myDibs.size() > 0) {
+                g2.setPaint(Color.BLACK);
+                Ellipse2D last = myDibs.get(myDibs.size() - 1);
+                g2.draw(last.getFrame());
+            }
         }
     }
 
     private void refresh() {
         myDibs.clear();
+        for (JLabel[] labels : myZone) {
+            for (int i = 0; i < IBoard.MY_BOARD_SIZE; i++) {
+                labels[i].setIcon(null);
+            }
+        }
         isTurnAllowed = false;
         repaint();
     }

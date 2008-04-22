@@ -35,7 +35,9 @@ public class PersonPlayer extends Player {
     public void makeNextTurn(byte[][] board, byte[] coordinates) {
 
         myBoard.setTurnAllowed(true);
-        while (!myBoard.turnIsReady() && !myFrame.isUndoNeeded()) {
+        while (!myBoard.turnIsReady()
+              && !myFrame.isUndoNeeded()
+              && !myFrame.isInterrupted()) {
             try {
                 Thread.sleep(111);
             } catch (InterruptedException e) {}

@@ -12,8 +12,12 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.MalformedURLException;
 
 /**
  *
@@ -23,6 +27,7 @@ public class GomokuFrame extends JFrame implements IListener {
     public static final int myActualWidth;
     public static final int myActualHeight;
 
+    public static final int MY_PERCENT = 100;
     public static final boolean ALLOW_STOP = false;
 
     static {
@@ -38,13 +43,20 @@ public class GomokuFrame extends JFrame implements IListener {
     private Controller myGame = null;
     private final IBoard myBoard;
     private BoardView myBoardView;
-    private JDialog mySelectView;
     private StatusView myStatus;
+    private TournamentView myTournament;
 
-    private boolean myGameFinished = false;
-    private boolean myGameStarted = false;
-    private boolean myGamePaused = false;
-    private boolean isUndoNeeded = false;
+    private UndoTurnListener myUndo;
+    private ContinueGameListener myContinue;
+
+    private JButton myUndoButton;
+    private JButton myContinueButton;
+
+    private volatile boolean myGameFinished = false;
+    private volatile boolean myGameStarted = false;
+    private volatile boolean myGamePaused = false;
+    private volatile boolean isUndoNeeded = false;
+    private volatile boolean isInterrupted = false;
 
     public GomokuFrame(IIntellectProvider intellectProvider) {
 
@@ -54,9 +66,9 @@ public class GomokuFrame extends JFrame implements IListener {
         setResizable(false);
 
         myBoard = new Board();
-        myBoardView = new BoardView();
         myIntellectProvider = intellectProvider;
         myImageProvider = new ImageProvider();
+        myBoardView = new BoardView(myImageProvider);
         myStatus = new StatusView();
 
         registerListenersToBoard();
@@ -75,17 +87,24 @@ public class GomokuFrame extends JFrame implements IListener {
     }
 
     private void addComponents() {
-        addSettings();
+
+        JButton newGame = new JButton(myImageProvider.getActionIcon("NewGame"));
+        myUndoButton = new JButton(myImageProvider.getActionIcon("Undo"));
+        myContinueButton = new JButton(myImageProvider.getActionIcon("Play"));
+
+        StartGameListener myStart = new StartGameListener();
+        myUndo = new UndoTurnListener();
+        myContinue = new ContinueGameListener();
+
+        addSettings(myStart, myUndo, myContinue);
         JPanel mainPanel = new JPanel(new BorderLayout());
 
         myBoardView.setSize(myActualWidth / 2
                          , myActualHeight / 2);
 
         JPanel pane = new JPanel();
-        pane.setBackground(new Color(0, 180, 150));
-        pane.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createTitledBorder("Current board!")
-                       , BorderFactory.createEmptyBorder(5, 10, 10, 11)));
+        pane.setBackground(new Color(150, 150, 150));
+        pane.setBorder(BorderFactory.createEmptyBorder(20, 16, 20, 17));
         pane.setLayout(new GridLayout(0, 1));
         pane.add(myBoardView);
 
@@ -97,61 +116,31 @@ public class GomokuFrame extends JFrame implements IListener {
         buttonPanel.setBackground(new Color(230, 250, 230));
         buttonPanel.setFloatable(false);
         buttonPanel.setLayout(new GridLayout(1, 4));
-        buttonPanel.add(new AbstractAction("New Game"
-                                          , myImageProvider.getActionIcon("NewGame")) {
 
-            public void actionPerformed(ActionEvent event) {
+        newGame.addActionListener(myStart);
+        myUndoButton.addActionListener(myUndo);
+        myContinueButton.addActionListener(myContinue);
 
-                this.putValue(Action.SHORT_DESCRIPTION, "start a new game");
-                if (myGame == null) {
-                    startNewGame();
-                } else if ((myGameFinished)) {
-                    myBoard.refreshBoard();
-                    startNewGame();
-                } else if (ALLOW_STOP) {
-                    //  myGame.stop()
-                    // startNewGame();
-                }
-            }
+        toContinue(false);
+        undo(false);
 
-            private void startNewGame() {
-                myGamePaused = false;
-                isUndoNeeded = false;
-                createSelectPlayerView();
-            }
-        });
+        buttonPanel.add(newGame);
         buttonPanel.add(new JLabel());
-
-        buttonPanel.add(new AbstractAction("undo"
-                                          , myImageProvider.getActionIcon("Undo")) {
-
-            public void actionPerformed(ActionEvent event) {
-
-                this.putValue(Action.SHORT_DESCRIPTION, "undo last made move");
-                myGamePaused = true;
-                isUndoNeeded = true;
-            }
-        });
-        buttonPanel.add(new AbstractAction("continue.."
-                                          , myImageProvider.getActionIcon("Play")) {
-
-            public void actionPerformed(ActionEvent event) {
-                this.putValue(Action.SHORT_DESCRIPTION
-                             , "continue playing current game");
-                myGamePaused = false;
-                isUndoNeeded = false;
-            }
-        });
-        add(buttonPanel, BorderLayout.SOUTH);
-        add(mainPanel, BorderLayout.CENTER);
+        buttonPanel.add(myUndoButton);
+        buttonPanel.add(myContinueButton);
+        GomokuFrame.this.add(buttonPanel, BorderLayout.SOUTH);
+        GomokuFrame.this.add(mainPanel, BorderLayout.CENTER);
     }
 
-    private void addSettings() {
-        final JFrame current = this;
-        JMenuBar settings = new JMenuBar();
+    private void addSettings(AbstractAction ...var) {
+
+        JMenuBar settingsBar = new JMenuBar();
         JMenu game = new JMenu("Game");
-        JMenu edit = new JMenu("Edit");
-        edit.add(new AbstractAction("Add Player") {
+        for (AbstractAction aVar : var) {
+            game.add(aVar);
+        }
+        JMenu settings = new JMenu("Edit");
+        settings.add(new AbstractAction("Add Player") {
 
             public void actionPerformed(ActionEvent event) {
 
@@ -160,7 +149,7 @@ public class GomokuFrame extends JFrame implements IListener {
                 addPlayer.setFileFilter(new FileFilter() {
 
                     public boolean accept(File f) {
-                        return f.getName().toLowerCase().endsWith(".java")
+                        return f.getName().toLowerCase().endsWith(".class")
                                || f.isDirectory();
                     }
 
@@ -168,63 +157,88 @@ public class GomokuFrame extends JFrame implements IListener {
                         return "Java player";
                     }
                 });
-                int result = addPlayer.showDialog(current, "add");
+                int result = addPlayer.showDialog(GomokuFrame.this, "Add");
                 if (result == JFileChooser.APPROVE_OPTION) {
                     File playerFile = addPlayer.getSelectedFile();
                     String path = playerFile.getPath();
-                    path = path.substring(path.lastIndexOf("ru.amse")).replace('\\', '.');
-                    path = path.substring(0, path.length() - ".java".length());
-
-                    System.out.println(path);
-                    Class c = null;
+                    String name = playerFile.getName();
+                    path = path.substring(0, path.length() - name.length()).replace('\\', '.');                    
                     try {
-                        c = Class.forName(path);
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace(); 
-                    }
-                    try {
-                        myIntellectProvider
-                        .registerPlayer(playerFile.getName()
-                                       , (IPlayer) c.getConstructor(String.class, byte.class)
-                                         .newInstance(playerFile.getName()
-                                                     , IBoard.DEFAULT_DIB_COLOUR));
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (InstantiationException e) {
-                        e.printStackTrace();
-                    } catch (ClassCastException e) {
+                        System.out.println(path);
+                        URL url = new URL(path);
+                        ClassLoader cl = new URLClassLoader(new URL[]{url});
+                        try {
+                            Class c = cl.loadClass(name);
+                            try {
+                                myIntellectProvider
+                                .registerPlayer(playerFile.getName()
+                                 , (IPlayer) c.getConstructor(String.class, byte.class)
+                                            .newInstance(playerFile.getName()
+                                                        , IBoard.DEFAULT_DIB_COLOUR));
+                            } catch (IllegalAccessException e) {
+                                e.printStackTrace();
+                            } catch (InstantiationException e) {
+                                e.printStackTrace();
+                            } catch (InvocationTargetException e) {
+                                e.printStackTrace();
+                            } catch (NoSuchMethodException e) {
+                                e.printStackTrace();
+                            }
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    } catch (MalformedURLException e) {
                         e.printStackTrace();
                     }
                 }
                 addPlayer.setVisible(false);
             }
         });
-        edit.add(new AbstractAction("Change BoardColour") {
+        settings.add(new AbstractAction("Change BoardColour") {
 
             public void actionPerformed(ActionEvent e) {
                 myBoardView.setBackground(JColorChooser
-                                         .showDialog(current
+                                         .showDialog(GomokuFrame.this
                                                     , "ChooseBoardColor"
                                                     , BoardView.DEFAULT_COLOR));
             }
         });
-        settings.add(game);
-        settings.add(edit);
-        current.setJMenuBar(settings);
+        game.add(new AbstractAction("Tournament") {
+
+            public void actionPerformed(ActionEvent e) {
+                new SelectPlayersForTournamentView(myIntellectProvider
+                                                  , GomokuFrame.this
+                                                  , myImageProvider);
+            }
+        });
+        game.add(settings);
+        game.add(new AbstractAction("Exit") {
+
+            public void actionPerformed(ActionEvent e) {
+                int result = JOptionPane
+                             .showConfirmDialog(GomokuFrame.this
+                                               , "Do you really want to exit?"
+                                               , "Exit"
+                                               , JOptionPane.OK_CANCEL_OPTION
+                                               , JOptionPane.INFORMATION_MESSAGE);
+                if (result == JOptionPane.OK_OPTION) {
+                    System.exit(1);
+                }
+            }
+        });
+        settingsBar.add(game);
+        GomokuFrame.this.setJMenuBar(settingsBar);
     }
 
     public void setPlayers(IPlayer first, IPlayer second) {
 
-        myGame = new Controller(myBoard, this);
+        isInterrupted = false;
+        myBoard.refreshBoard();
+        myGame = new Controller(myBoard, this, false);
         myGame.setPlayers(first, second);
         myStatus.setPlayers(first, second);
         myStatus.setNextTurnStatus();
         
-        mySelectView.dispose();
         myGameStarted = true;
         myGameFinished = false;
     }
@@ -234,9 +248,7 @@ public class GomokuFrame extends JFrame implements IListener {
     }
 
     private void createSelectPlayerView() {
-        mySelectView = new SelectPlayerView(this
-                                           , myIntellectProvider
-                                           , myImageProvider);        
+        new SelectPlayerView(this, myIntellectProvider, myImageProvider);
     }
 
     public boolean isGamePaused() {
@@ -254,6 +266,11 @@ public class GomokuFrame extends JFrame implements IListener {
     public synchronized void actionPerformed(int action, Object description) {
 
         switch(action) {
+
+            case(IBoard.ADD_PERFORMED) :
+                myUndo.setEnabled(true);
+                myUndoButton.setEnabled(true);
+                break;
 
             case(IBoard.UNDO_PERFORMED) :
                 setUndoNeeded(false);
@@ -279,8 +296,8 @@ public class GomokuFrame extends JFrame implements IListener {
 
         String message;
         String title;
-
         ImageIcon icon;
+
         if (gameFinishedWithWin) {
             title = "There is a winner!";
             message = "!!" + winner.getName() + "!!";
@@ -293,16 +310,165 @@ public class GomokuFrame extends JFrame implements IListener {
             message = "Congaratulations to both of You";
             icon = myImageProvider.getActionIcon("Draw");
         }
+        undo(false);
         JOptionPane.showMessageDialog(this, message, title, JOptionPane.OK_OPTION, icon);
     }
 
-    public void toMakeTurnIsImpossible(byte[] coordinates) {
+    public void setTournamentFinished() {
 
+    }
+
+    public void toMakeTurnIsImpossible(byte[] coordinates) {
         String message = "<html>Your move-<b> "+ coordinates[0]
                        + " , " + coordinates[1] + "</b> is invalid!  \n " +
                 "  System will exit!";
         String title = "invalid move!";
         JOptionPane.showMessageDialog(this, message, title, JOptionPane.OK_OPTION);
         System.exit(0);
+    }
+
+    public boolean isInterrupted() {
+        return isInterrupted;
+    }
+
+    public void setInterrupted(boolean set) {
+        isInterrupted = set;
+    }
+
+    public void setPlayersForTournament(String[] playersChosen, int number) {
+
+        Tournament tournament = new Tournament(playersChosen
+                                              , number
+                                              , myIntellectProvider
+                                              , GomokuFrame.this);
+        myTournament = new TournamentView(this, tournament);
+
+        Timer myTimer = new Timer(100, new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                if (myTournament != null) {
+                    System.out.println("not null yet");
+                }
+            }
+        });
+        myTimer.start();
+    }
+
+    public void setResult(boolean withWin, IPlayer first, IPlayer second, IPlayer winner) {
+        String result = "Draw";
+        if (withWin) {
+            result = winner.getName();           
+        }
+        myTournament.setWinner(first.getName(), second.getName(), result);
+        //System.out.println("winner = " + winner.getName());
+        //System.out.println(myTournamentGames);
+    }
+
+    public void undo(boolean undo) {
+        myUndo.setEnabled(undo);
+        myUndoButton.setEnabled(undo);
+        setUndoNeeded(false);
+    }
+
+    private void toContinue(boolean toContinue) {
+        myContinue.setEnabled(toContinue);
+        myContinueButton.setEnabled(toContinue);
+
+        if (toContinue) {
+            myContinueButton.setIcon(myImageProvider.getActionIcon("Pause"));
+        } else {
+            myContinueButton.setIcon(myImageProvider.getActionIcon("Play"));
+        }
+    }
+
+    private class StartGameListener extends AbstractAction
+                                    implements ActionListener {
+
+        public StartGameListener(Icon icon) {
+            super("New Game", icon);
+            putValue(Action.SHORT_DESCRIPTION, "click here to start a new game");
+        }
+
+        public StartGameListener() {
+            this(null);
+        }
+
+        public void actionPerformed(ActionEvent event) {
+            if (myGame == null) {
+                startNewGame();
+            } else if ((myGameFinished)) {
+                startNewGame();
+            } else {
+                int result = JOptionPane
+                             .showConfirmDialog(GomokuFrame.this
+                                               , "Do you wish to start a new game\n"
+                                               + " and leave current?"
+                                               , "New Game"
+                                               , JOptionPane.OK_CANCEL_OPTION
+                                               , JOptionPane.INFORMATION_MESSAGE);
+                if (result == JOptionPane.OK_OPTION) {
+                    isInterrupted = true;
+                    myBoard.refreshBoard();
+                    undo(false);
+                    startNewGame();
+                }
+            }
+        }
+
+        private void startNewGame() {
+            myGamePaused = false;
+            setUndoNeeded(false);
+            toContinue(false);
+
+            createSelectPlayerView();
+        }
+    }
+
+    private class UndoTurnListener extends AbstractAction
+                                   implements ActionListener {
+
+        public UndoTurnListener(Icon icon) {
+            super("Undo", icon);
+            putValue(Action.SHORT_DESCRIPTION, "undo last made move");
+        }
+
+        public UndoTurnListener() {
+            this(null);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if (myGameStarted) {
+
+                myGamePaused = true;
+                setUndoNeeded(true);
+                toContinue(true);
+            }
+        }
+    }
+
+    private class ContinueGameListener extends AbstractAction
+                                       implements ActionListener {
+
+        public ContinueGameListener(Icon icon) {
+            super("Continue", icon);
+            putValue(Action.SHORT_DESCRIPTION
+                    , "continue playing current game");
+        }
+
+        public ContinueGameListener() {
+            this(null);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if (myGameStarted) {
+
+                myGamePaused = false;
+                setUndoNeeded(false);
+                if (myBoard.isUndoPossible()) {
+                    undo(true);
+                }
+                toContinue(false);
+            }
+        }
     }
 }
