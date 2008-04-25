@@ -106,6 +106,7 @@ public class Board implements IBoard {
                 myBoard[i][j] = EMPTY_TURN;
             }
         }
+        myNumberOfDibs = 0;
         fireEvent(IBoard.REFRESH_PERFORMED, null);
     }
 

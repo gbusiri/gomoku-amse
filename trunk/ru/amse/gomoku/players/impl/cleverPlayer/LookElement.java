@@ -1,7 +1,7 @@
 package ru.amse.gomoku.players.impl.cleverPlayer;
 
-import java.util.Random;
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  *

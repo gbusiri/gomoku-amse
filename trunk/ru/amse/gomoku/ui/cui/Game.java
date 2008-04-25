@@ -1,8 +1,7 @@
 package ru.amse.gomoku.ui.cui;
 
-import ru.amse.gomoku.players.IPlayer;
 import ru.amse.gomoku.board.impl.Board;
-import ru.amse.gomoku.ui.cui.View;
+import ru.amse.gomoku.players.IPlayer;
 
 /**
  * 

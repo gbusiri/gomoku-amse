@@ -1,7 +1,7 @@
 package ru.amse.gomoku.ui.gui;
 
-import ru.amse.gomoku.board.IListener;
 import ru.amse.gomoku.board.IBoard;
+import ru.amse.gomoku.board.IListener;
 import ru.amse.gomoku.players.IPlayer;
 
 import javax.swing.*;

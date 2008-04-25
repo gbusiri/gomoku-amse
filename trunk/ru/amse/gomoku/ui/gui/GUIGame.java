@@ -1,11 +1,10 @@
 package ru.amse.gomoku.ui.gui;
 
+import ru.amse.gomoku.players.impl.AIPlayer;
+import ru.amse.gomoku.players.impl.aiPlayer.MyAIPlayer;
+import ru.amse.gomoku.players.impl.cleverPlayer.CleverPlayer;
 import ru.amse.gomoku.providers.IIntellectProvider;
 import ru.amse.gomoku.providers.impl.IntellectProvider;
-import ru.amse.gomoku.players.impl.PersonPlayer;
-import ru.amse.gomoku.players.impl.AIPlayer;
-import ru.amse.gomoku.players.impl.cleverPlayer.CleverPlayer;
-import ru.amse.gomoku.players.impl.aiPlayer.MyAIPlayer;
 
 import javax.swing.*;
 import java.net.URL;

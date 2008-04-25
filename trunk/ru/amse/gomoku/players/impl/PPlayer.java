@@ -1,7 +1,7 @@
 package ru.amse.gomoku.players.impl;
 
 import ru.amse.gomoku.players.Player;
-import ru.amse.gomoku.ui.cui.*;
+import ru.amse.gomoku.ui.cui.IView;
 import ru.amse.gomoku.ui.cui.View;
 
 /**
