@@ -4,7 +4,6 @@ import ru.amse.gomoku.board.impl.Board;
 import ru.amse.gomoku.players.IPlayer;
 import ru.amse.gomoku.providers.IIntellectProvider;
 
-import javax.swing.*;
 import java.util.LinkedList;
 
 /**
@@ -16,46 +15,62 @@ class Tournament extends Thread {
     private IPlayer[] myPlayers;
     private int myNumber;
     private int myGamesFinished = 0;
+    private int myLength;
+
     private GomokuFrame myFrame;
+    private TournamentView myResult;
+
+
+    private boolean isReadyToStart = false;
 
     public Tournament(String[] playersChosen
                          , int number
                          , IIntellectProvider provider
                          , GomokuFrame frame) {
-        myPlayers = new IPlayer[playersChosen.length];
+        myLength = playersChosen.length;
+        if (myLength == 1) {
+            myLength++;
+        }
+        myPlayers = new IPlayer[myLength];
         myNumber = number;
         myFrame = frame;
-        int i = 0;
 
-        for (String name : playersChosen) {
-            myPlayers[i] = provider.getPlayer(name);
-            i++;
+        for (int i = 0; i < playersChosen.length; i++) {
+            myPlayers[i] = provider.getPlayer(playersChosen[i]);
+        }
+        if (playersChosen.length == 1) {
+            myPlayers[1] = provider.getPlayer(playersChosen[0]);            
         }
         start();
     }
 
     public void run() {
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {}
-        int length = myPlayers.length;
+        waitForStart();
+
         for (int i = 0; i < myNumber; i++) {
             LinkedList<Controller> threads = new LinkedList<Controller>();
-            for (int j = 0; j < length; j++) {
-                int k = j + 1;
-                if (length == 1) {
-                    k = j;
-                }
-                for ( ; k < length; k++) {
+
+            for (int j = 0; j < myLength; j++) {
+
+                for (int k = j + 1; k < myLength; k++) {
                     int first = j;
                     int second = k;
-                    if (k < length / 2) {
+                    if (k < myLength / 2) {
                         first = k;
                         second = j;
                     }
                     Controller tournamentGame = new Controller(new Board(), myFrame, true);
                     threads.add(tournamentGame);
-                    tournamentGame.setPlayers(myPlayers[first], myPlayers[second]);
+
+                    String name;
+                    if (myPlayers[first].getName().equals(myPlayers[second].getName())) {
+                        name = myPlayers[first].getName();
+                        myPlayers[first].setName(name + " first");
+                        myPlayers[second].setName(name + " second");
+                    }
+                    tournamentGame.setTournamentPlayers(myPlayers[first]
+                                                       , myPlayers[second]
+                                                       , myResult);
                 }
             }
             for (Controller thread: threads) {
@@ -69,11 +84,24 @@ class Tournament extends Thread {
         }
     }
 
+    private void waitForStart() {
+        do {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {}
+        } while (!isReadyToStart);
+    }
+
     public int getGame() {
         return myGamesFinished;        
     }
 
     public int totalGameNumber() {
-        return myNumber;
+        return myNumber * myLength * (myLength - 1) / 2;
+    }
+
+    public void setReady(TournamentView result) {
+        myResult = result;
+        isReadyToStart = true;
     }
 }

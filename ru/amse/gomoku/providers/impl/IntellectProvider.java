@@ -1,8 +1,8 @@
 package ru.amse.gomoku.providers.impl;
 
 import ru.amse.gomoku.board.IBoard;
-import ru.amse.gomoku.providers.IIntellectProvider;
 import ru.amse.gomoku.players.IPlayer;
+import ru.amse.gomoku.providers.IIntellectProvider;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
@@ -45,9 +45,6 @@ public class IntellectProvider implements IIntellectProvider {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
             e.printStackTrace();
-        }
-        if (toGet != null) {
-            toGet.setName(toGet.getName().substring(0, IIntellectProvider.MY_MAX_NAME_SIZE) + "..");
         }
         return toGet;
     }

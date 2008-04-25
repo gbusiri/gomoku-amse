@@ -15,9 +15,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.MalformedURLException;
 
 /**
  *
@@ -314,10 +314,6 @@ public class GomokuFrame extends JFrame implements IListener {
         JOptionPane.showMessageDialog(this, message, title, JOptionPane.OK_OPTION, icon);
     }
 
-    public void setTournamentFinished() {
-
-    }
-
     public void toMakeTurnIsImpossible(byte[] coordinates) {
         String message = "<html>Your move-<b> "+ coordinates[0]
                        + " , " + coordinates[1] + "</b> is invalid!  \n " +
@@ -342,26 +338,6 @@ public class GomokuFrame extends JFrame implements IListener {
                                               , myIntellectProvider
                                               , GomokuFrame.this);
         myTournament = new TournamentView(this, tournament);
-
-        Timer myTimer = new Timer(100, new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                if (myTournament != null) {
-                    System.out.println("not null yet");
-                }
-            }
-        });
-        myTimer.start();
-    }
-
-    public void setResult(boolean withWin, IPlayer first, IPlayer second, IPlayer winner) {
-        String result = "Draw";
-        if (withWin) {
-            result = winner.getName();           
-        }
-        myTournament.setWinner(first.getName(), second.getName(), result);
-        //System.out.println("winner = " + winner.getName());
-        //System.out.println(myTournamentGames);
     }
 
     public void undo(boolean undo) {
@@ -416,6 +392,7 @@ public class GomokuFrame extends JFrame implements IListener {
         }
 
         private void startNewGame() {
+            
             myGamePaused = false;
             setUndoNeeded(false);
             toContinue(false);

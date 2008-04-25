@@ -1,5 +1,7 @@
 package ru.amse.gomoku.ui.gui;
 
+import ru.amse.gomoku.players.IPlayer;
+
 import javax.swing.*;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
@@ -27,6 +29,7 @@ public class TournamentView extends JDialog {
     public TournamentView(GomokuFrame frame, Tournament tournament) {
         super(frame, "Tournament has started!", true);
         myTournament = tournament;
+
         myProgress = new JProgressBar(JProgressBar.HORIZONTAL, 0, MY_PERCENT);
         makeTable();
 
@@ -37,6 +40,7 @@ public class TournamentView extends JDialog {
         addTimer();
         addWidgets();
 
+        myTournament.setReady(this);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setVisible(true);
     }
@@ -47,22 +51,14 @@ public class TournamentView extends JDialog {
                                               , "Second Player"
                                               , "Winner"};
         myResults = new JTable(
-                     new String[myTournament.totalGameNumber()][columnHeaders.length]
-                     , columnHeaders);
+                      new Object[myTournament.totalGameNumber()][columnHeaders.length]
+                      , columnHeaders);
         myResults.setEnabled(false);
         myResults.setFont(Font.decode("Serif"));
 
         JTableHeader header = myResults.getTableHeader();
         header.setResizingAllowed(true);
         header.setReorderingAllowed(false);
-    }
-
-    public void setWinner(String first, String second, String winner) {
-        myResults.setValueAt(myCurrentGame + 1, myCurrentGame, 0);
-        myResults.setValueAt(first, myCurrentGame, 1);
-        myResults.setValueAt(second, myCurrentGame, 2);
-        myResults.setValueAt(winner, myCurrentGame, 3);
-        myCurrentGame++;
     }
 
     private void addWidgets() {
@@ -97,6 +93,7 @@ public class TournamentView extends JDialog {
 
             public void actionPerformed(ActionEvent e) {
                 isStopPressed = true;
+                myStop.setEnabled(false);
             }
         });
     }
@@ -116,5 +113,23 @@ public class TournamentView extends JDialog {
             }
         });
         myTimer.start();
+    }
+
+    public void setWinner(boolean withWin, IPlayer first, IPlayer second, IPlayer winner) {
+        if (!isStopPressed) {
+            String result = "Draw";
+
+            if (withWin) {
+                result = winner.getName();
+            }
+            myResults.setValueAt(myCurrentGame + 1, myCurrentGame, 0);
+            myResults.setValueAt(first.getName(), myCurrentGame, 1);
+            myResults.setValueAt(second.getName(), myCurrentGame, 2);
+            myResults.setValueAt(result, myCurrentGame, 3);
+            myCurrentGame++;
+            if (myCurrentGame + 1 == myResults.getRowCount()) {
+                myStop.setEnabled(false);
+            }
+        }
     }
 }

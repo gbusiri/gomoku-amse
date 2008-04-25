@@ -1,7 +1,7 @@
 package ru.amse.gomoku.players.impl.aiPlayer;
 
-import ru.amse.gomoku.players.Player;
 import ru.amse.gomoku.board.IBoard;
+import ru.amse.gomoku.players.Player;
 
 /**
  * 

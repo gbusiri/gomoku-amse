@@ -1,10 +1,9 @@
 package ru.amse.gomoku.ui.cui;
 
 import ru.amse.gomoku.board.IBoard;
-import ru.amse.gomoku.ui.cui.IView;
 
-import java.util.Scanner;
 import java.util.InputMismatchException;
+import java.util.Scanner;
 
 /**
  *

@@ -1,8 +1,5 @@
 package ru.amse.gomoku.board;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 /**
  * 
  */

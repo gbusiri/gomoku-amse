@@ -1,15 +1,15 @@
 package ru.amse.gomoku.ui.gui;
 
+import ru.amse.gomoku.board.IBoard;
 import ru.amse.gomoku.players.IPlayer;
 import ru.amse.gomoku.players.impl.PersonPlayer;
 import ru.amse.gomoku.providers.IImageProvider;
 import ru.amse.gomoku.providers.IIntellectProvider;
-import ru.amse.gomoku.board.IBoard;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  *

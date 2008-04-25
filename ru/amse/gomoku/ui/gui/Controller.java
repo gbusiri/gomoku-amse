@@ -1,7 +1,7 @@
 package ru.amse.gomoku.ui.gui;
 
-import ru.amse.gomoku.players.IPlayer;
 import ru.amse.gomoku.board.IBoard;
+import ru.amse.gomoku.players.IPlayer;
 
 /**
  *
@@ -14,6 +14,7 @@ public class Controller extends Thread {
 
     private IBoard myBoard;
     private byte[] myCoordinates;
+    private TournamentView myResultTable;
     final GomokuFrame gomokuFrame;
 
     private volatile boolean interrupted = false;
@@ -44,13 +45,14 @@ public class Controller extends Thread {
             }
             makeTurn();
         } while ((!myBoard.isWin()) && (myBoard.isPossibleTurnPresent()));
+        
         if (!isTournament) {
             gomokuFrame.setGameFinished(myBoard.isPossibleTurnPresent()
                                        , myCurrentPlayer);
         } else {
-            gomokuFrame.setResult(myBoard.isPossibleTurnPresent()
+            myResultTable.setWinner(myBoard.isPossibleTurnPresent()
                                  , myFirstPlayer
-                                 ,  mySecondPlayer
+                                 , mySecondPlayer
                                  , myCurrentPlayer);
         }
     }
@@ -59,6 +61,13 @@ public class Controller extends Thread {
         myFirstPlayer = first;
         mySecondPlayer = second;
         isReadyToStart = true;
+    }
+
+    public void setTournamentPlayers(IPlayer first
+                                    , IPlayer second
+                                    , TournamentView result) {
+        myResultTable = result;
+        setPlayers(first, second);
     }
 
     public IPlayer getCurrentPlayer() {
